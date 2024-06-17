@@ -5,11 +5,7 @@ FROM python:3.10-slim
 WORKDIR /code
 
 # Copy the current directory contents into the container at /app
-<<<<<<< HEAD
 COPY ./app /code/app
-=======
-COPY . .
->>>>>>> c61441d9a0c1ed660a3a2e485584596c50cad4f7
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
