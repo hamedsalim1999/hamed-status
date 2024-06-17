@@ -1,15 +1,30 @@
-from typing import Union
+from flask import Flask, request, jsonify
+from redis import Redis
+import os
+import datetime
 
-from fastapi import FastAPI
+app = Flask(__name__)
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_client = Redis(host=redis_host, port=redis_port, decode_responses=True)
 
-app = FastAPI()
+@app.route("/status", methods=["GET"])
+def read_status():
+    status = redis_client.get("status")
+    last_update = redis_client.get("last_update")
+    if status is None:
+        return jsonify({"error": "Status not found"}), 404
+    return jsonify({"status": status, "last_update": last_update})
 
+@app.route("/status", methods=["POST"])
+def create_status():
+    status = request.json.get("status")
+    if not status:
+        return jsonify({"error": "Invalid status"}), 400
+    redis_client.set("status", status)
+    last_update = datetime.datetime.utcnow().isoformat()
+    redis_client.set("last_update", last_update)
+    return jsonify({"message": "Status created", "last_update": last_update})
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=80)
